@@ -6,6 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "AccelByteGeneralModels.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "AccelByteUserModels.generated.h"
 
 UENUM(BlueprintType)

@@ -33,7 +33,7 @@ struct ACCELBYTEUE4SDK_API FErrorInfo
 
 namespace AccelByte
 {
-#if ENGINE_MINOR_VERSION > 25
+#if ENGINE_MINOR_VERSION >= 26
 	template <typename T> using THandler = TDelegate<void(const T&)>;
 	using FVoidHandler = TDelegate<void()>;
 	using FErrorHandler = TDelegate<void(int32 /*ErrorCode*/, const FString& /* ErrorMessage */)>;
