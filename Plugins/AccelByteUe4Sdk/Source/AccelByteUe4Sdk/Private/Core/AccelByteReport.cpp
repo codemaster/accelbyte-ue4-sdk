@@ -7,44 +7,58 @@
 
 DEFINE_LOG_CATEGORY(AccelByteReportLog);
 
+/*static*/ bool AccelByte::Report::bSimpleLoggingEnabled = false;
+/*static*/ bool AccelByte::Report::bLoggingEnabled = true;
+
 namespace AccelByte
 {
-	/*static*/ void Report::SetLogVerbosity(ELogVerbosity::Type Verbosity)
+	/*static*/ void Report::SetSimpleLoggingEnabled(bool bEnable)
 	{
-#ifndef NO_LOGGING
-		AccelByteReportLog.SetVerbosity(Verbosity);
-#endif // NO_LOGGING
+		bSimpleLoggingEnabled = bEnable;
+	}
+
+	/*static*/ void Report::SetLoggingEnabled(bool bEnable)
+	{
+		bLoggingEnabled = bEnable;
 	}
 
 	void Report::GetHttpRequest(const FHttpRequestPtr & Request)
 	{
-		if (!UObjectInitialized()) return;
+		if (!UObjectInitialized() || !bLoggingEnabled) return;
 
 		FString LogMessage = "";
 
 		if (Request.IsValid())
 		{
-			LogMessage += "\nHTTP Request:";
-			LogMessage += FString::Printf(TEXT("\nPtr: %p"), Request.Get());
-			LogMessage += "\n---";
-			LogMessage += "\n" + Request->GetVerb() + " " + Request->GetURL();
-			LogMessage += "\n";
-			for (auto a : Request->GetAllHeaders())
+			if (bSimpleLoggingEnabled)
 			{
-				LogMessage += a + "\n";
+				LogMessage = FString::Printf(TEXT("HTTP Request: Ptr %p, %s to %s"),
+					Request.Get(), *(Request->GetVerb()), *(Request->GetURL()));
 			}
-//INTENTIONAL: Request->GetContent() && Request->GetContentLength() could throw an error if it doesn't have content
+			else
+			{
+				LogMessage += "\nHTTP Request:";
+				LogMessage += FString::Printf(TEXT("\nPtr: %p"), Request.Get());
+				LogMessage += "\n---";
+				LogMessage += "\n" + Request->GetVerb() + " " + Request->GetURL();
+				LogMessage += "\n";
+				for (auto a : Request->GetAllHeaders())
+				{
+					LogMessage += a + "\n";
+				}
+				//INTENTIONAL: Request->GetContent() && Request->GetContentLength() could throw an error if it doesn't have content
 #if ENGINE_MINOR_VERSION != 22 
-			LogMessage += "Content-Length: " + FString::FromInt(Request->GetContentLength());
+				LogMessage += "Content-Length: " + FString::FromInt(Request->GetContentLength());
 
-			LogMessage += "\n\n";
-			for (auto a : Request->GetContent())
-			{
-				LogMessage += static_cast<char>(a);
-			}
-			LogMessage += "\n---";
-			LogMessage += "\n";
+				LogMessage += "\n\n";
+				for (auto a : Request->GetContent())
+				{
+					LogMessage += static_cast<char>(a);
+				}
+				LogMessage += "\n---";
+				LogMessage += "\n";
 #endif
+			}
 		}
 		
 		UE_LOG(AccelByteReportLog, Log, TEXT("%s"), *LogMessage);
@@ -52,24 +66,33 @@ namespace AccelByte
 
 	void Report::GetHttpResponse(FHttpRequestPtr Request, FHttpResponsePtr Response)
 	{
-		if (!UObjectInitialized()) return;
+		if (!UObjectInitialized() || !bLoggingEnabled) return;
 
 		FString LogMessage = "";
 
 		if (Response.IsValid())
 		{
-			LogMessage += "\nHTTP Response:";
-			LogMessage += FString::Printf(TEXT("\nPtr: %p"), Request.Get());
-			if (Request.IsValid())
+			if (bSimpleLoggingEnabled)
 			{
-				LogMessage += FString::Printf(TEXT("\nRequest: %s %s"), *Request->GetVerb(), *Request->GetURL());
+				LogMessage = FString::Printf(TEXT("HTTP Response: Ptr %p, %s to %s resulted in %d: %s"),
+					Request.Get(), *(Request->GetVerb()), *(Request->GetURL()),
+					Response->GetResponseCode(), *(FString::FromInt(Response->GetResponseCode())));
 			}
-			LogMessage += "\n---";
-			LogMessage += "\nHTTP/1.1 " + FString::FromInt(Response->GetResponseCode());
-			LogMessage += "\nDate: " + GetStandardTime();
-			LogMessage += "\nContent-Length: " + FString::FromInt(Response->GetContent().Num());
-			LogMessage += "\n \n" + Response->GetContentAsString();
-			LogMessage += "\n---\n";
+			else
+			{
+				LogMessage += "\nHTTP Response:";
+				LogMessage += FString::Printf(TEXT("\nPtr: %p"), Request.Get());
+				if (Request.IsValid())
+				{
+					LogMessage += FString::Printf(TEXT("\nRequest: %s %s"), *Request->GetVerb(), *Request->GetURL());
+				}
+				LogMessage += "\n---";
+				LogMessage += "\nHTTP/1.1 " + FString::FromInt(Response->GetResponseCode());
+				LogMessage += "\nDate: " + GetStandardTime();
+				LogMessage += "\nContent-Length: " + FString::FromInt(Response->GetContent().Num());
+				LogMessage += "\n \n" + Response->GetContentAsString();
+				LogMessage += "\n---\n";
+			}
 		}
 
 		UE_LOG(AccelByteReportLog, Log, TEXT("%s"), *LogMessage);
@@ -77,7 +100,7 @@ namespace AccelByte
 
 	void Report::GetFunctionLog(FString FunctionMacroName) 
 	{
-		if (!UObjectInitialized()) return;
+		if (!UObjectInitialized() || !bLoggingEnabled) return;
 
 		int count = 0;
 		
@@ -97,12 +120,19 @@ namespace AccelByte
 		ClassName = ClassName.Left(ClassName.Len() - FunctionName.Len() - 2 );
 
 		FString LogMessage = "";
-		LogMessage += "\nCurrent Function Called:";
-		LogMessage += "\n---";
-		LogMessage += "\nDate: " + GetStandardTime();
-		LogMessage += "\nClass: " + ClassName;
-		LogMessage += "\nFunction: " + FunctionName;
-		LogMessage += "\n---\n";
+		if (bSimpleLoggingEnabled)
+		{
+			LogMessage = FString::Printf(TEXT("Called function %s::%s at %s"), *ClassName, *FunctionName, *(GetStandardTime()));
+		}
+		else
+		{
+			LogMessage += "\nCurrent Function Called:";
+			LogMessage += "\n---";
+			LogMessage += "\nDate: " + GetStandardTime();
+			LogMessage += "\nClass: " + ClassName;
+			LogMessage += "\nFunction: " + FunctionName;
+			LogMessage += "\n---\n";
+		}
 
 		UE_LOG(AccelByteReportLog, Log, TEXT("%s"), *LogMessage);
 	}

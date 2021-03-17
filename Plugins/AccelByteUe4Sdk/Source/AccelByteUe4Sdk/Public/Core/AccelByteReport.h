@@ -10,6 +10,7 @@
 #include "AccelByteSettings.h"
 #include "AccelByteCredentials.h"
 #include "Http.h"
+#include "Logging/LogVerbosity.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(AccelByteReportLog, Log, All);
 
@@ -21,11 +22,17 @@ namespace AccelByte
 class ACCELBYTEUE4SDK_API Report
 {
 public:
-	static void SetLogVerbosity(ELogVerbosity::Type Verbosity);
+	static bool IsSimpleLoggingEnabled() { return bSimpleLoggingEnabled; }
+	static bool IsLoggingEnabled() { return bLoggingEnabled; }
+	static void SetSimpleLoggingEnabled(bool bEnable);
+	static void SetLoggingEnabled(bool bEnable);
+
 	void GetHttpRequest(const FHttpRequestPtr& Request);
 	void GetHttpResponse(FHttpRequestPtr Request, FHttpResponsePtr Response);
 	void GetFunctionLog(FString FunctionMacroName);
 private:
 	FString GetStandardTime();
+	static bool bSimpleLoggingEnabled;
+	static bool bLoggingEnabled;
 };
 }
