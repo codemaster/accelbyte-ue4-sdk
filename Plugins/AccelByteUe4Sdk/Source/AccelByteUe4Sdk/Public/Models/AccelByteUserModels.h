@@ -233,6 +233,8 @@ struct ACCELBYTEUE4SDK_API FPlatformLink
 		FString PlatformUserId;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | UserManagement | Models | LinkedPlatform")
 		FString UserId;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | UserManagement | Models | LinkedPlatform")
+		FString AccountGroup;
 };
 
 UENUM(BlueprintType)
@@ -412,4 +414,14 @@ struct ACCELBYTEUE4SDK_API FUpdateEmailRequest
 		FString Code;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | UserManagement | Models | UpdateEmailRequest")
 		FString EmailAddress;
+};
+
+USTRUCT(BlueprintType)
+struct ACCELBYTEUE4SDK_API FJsonWebTokenResponse
+{
+	GENERATED_BODY()
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | UserManagement | Models | UpdateEmailRequest")
+		FString Jwt_token;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | UserManagement | Models | UpdateEmailRequest")
+		FString Session_id;
 };

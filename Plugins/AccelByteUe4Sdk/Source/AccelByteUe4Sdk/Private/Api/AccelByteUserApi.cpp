@@ -88,14 +88,32 @@ void User::LoginWithOtherPlatform(EAccelBytePlatformType PlatformType, const FSt
 			OnError.ExecuteIfBound(ErrorCode, ErrorMessage);
 		}));
 	}
-	Oauth2::GetSessionIdWithPlatformGrant(Settings.ClientId, Settings.ClientSecret, GetPlatformString(PlatformType), PlatformToken, THandler<FOauth2Session>::CreateLambda([this, OnSuccess, OnError](const FOauth2Session& Result)
+	Oauth2::GetSessionIdWithPlatformGrant(Settings.ClientId, Settings.ClientSecret, GetPlatformString(PlatformType), PlatformToken, THandler<FOauth2Session>::CreateLambda([this, PlatformType, OnSuccess, OnError](const FOauth2Session& Result)
 	{
 		const FOauth2Session session = Result;
 		AccelByte::Api::User::Credentials.SetUserSession(session.Session_id, FPlatformTime::Seconds() + (session.Expires_in*FMath::FRandRange(0.7, 0.9)), session.Refresh_id);
-		GetData(THandler<FAccountUserData>::CreateLambda([this, OnSuccess, session](const FAccountUserData& Result)
+		GetData(THandler<FAccountUserData>::CreateLambda([this, PlatformType, OnSuccess, OnError](const FAccountUserData& Result)
 		{
 			AccelByte::Api::User::Credentials.SetUserLogin(Result.UserId, Result.DisplayName, Result.Namespace);
-			OnSuccess.ExecuteIfBound();
+			GetPlatformLinks(THandler<FPagedPlatformLinks>::CreateLambda([this, PlatformType, OnSuccess, OnError](const FPagedPlatformLinks& Result)
+			{
+				if (Result.Data.Num() > 0)
+				{
+					for (auto& data : Result.Data)
+					{
+						if (data.PlatformId == GetPlatformString(PlatformType))
+						{
+							AccelByte::Api::User::Credentials.SetPlatformInfo(data.PlatformUserId);
+							OnSuccess.ExecuteIfBound();
+							return;
+						}
+					}
+				}
+				OnError.ExecuteIfBound((int32)ErrorCodes::InvalidResponse, ErrorMessages::Default.at((int32)ErrorCodes::InvalidResponse));
+			}), FErrorHandler::CreateLambda([OnError](int32 ErrorCode, const FString& ErrorMessage)
+			{
+				OnError.ExecuteIfBound(ErrorCode, ErrorMessage);
+			}));
 		}), FErrorHandler::CreateLambda([OnError](int32 ErrorCode, const FString& ErrorMessage)
 		{
 			OnError.ExecuteIfBound(ErrorCode, ErrorMessage);
@@ -902,6 +920,32 @@ void User::GetUserEligibleToPlay(const THandler<bool>& OnSuccess, const FErrorHa
 	{
 		OnError.ExecuteIfBound(ErrorCode, ErrorMsg);
 	}));
+}
+
+void User::GetJsonWebToken(const THandler<FJsonWebTokenResponse>& OnSuccess, const FErrorHandler& OnError)
+{
+	Report report;
+	report.GetFunctionLog(FString(__FUNCTION__));
+
+	FString url;
+	url = Settings.IamServerUrl;
+	if (Settings.IamServerUrl.Contains("/iam"))
+	{
+		url.RemoveFromEnd("/iam");
+	}
+
+	FString Authorization = FString::Printf(TEXT("Bearer %s"), *Credentials.GetUserSessionId());
+	FString Url = FString::Printf(TEXT("%s/namespaces/%s/users/%s/sessions/%s"), *url, *Settings.Namespace, *Credentials.GetUserId(), *Credentials.GetUserSessionId());
+	FString Verb = TEXT("GET");
+	FString Accept = TEXT("application/json");
+
+	FHttpRequestPtr Request = FHttpModule::Get().CreateRequest();
+	Request->SetURL(Url);
+	Request->SetHeader(TEXT("Authorization"), Authorization);
+	Request->SetVerb(Verb);
+	Request->SetHeader(TEXT("Accept"), Accept);
+
+	FRegistry::HttpRetryScheduler.ProcessRequest(Request, CreateHttpResultHandler(OnSuccess, OnError), FPlatformTime::Seconds());
 }
 
 } // Namespace Api
