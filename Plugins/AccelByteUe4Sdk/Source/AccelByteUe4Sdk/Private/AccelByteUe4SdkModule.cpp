@@ -57,6 +57,7 @@ void FAccelByteUe4SdkModule::StartupModule()
 	FRegistry::HttpRetryScheduler.Startup();
 	FRegistry::Credentials.Startup();
 	FRegistry::GameTelemetry.Startup();
+	FRegistry::ServerCredentials.Startup();
 }
 
 void FAccelByteUe4SdkModule::ShutdownModule()
@@ -64,6 +65,8 @@ void FAccelByteUe4SdkModule::ShutdownModule()
 	FRegistry::GameTelemetry.Shutdown();
 	FRegistry::Credentials.Shutdown();
 	FRegistry::HttpRetryScheduler.Shutdown();
+	FRegistry::ServerCredentials.Shutdown();
+
 	UnregisterSettings();
 }
 
@@ -168,6 +171,7 @@ bool FAccelByteUe4SdkModule::LoadServerSettingsFromConfigUobject()
 	FRegistry::ServerSettings.AchievementServerUrl = GetDefaultServerAPIUrl(GetDefault<UAccelByteServerSettings>()->AchievementServerUrl, TEXT("achievement"));
 	FRegistry::ServerSettings.MatchmakingServerUrl = GetDefaultServerAPIUrl(GetDefault<UAccelByteServerSettings>()->MatchmakingServerUrl, TEXT("matchmaking"));
 	FRegistry::ServerSettings.LobbyServerUrl = GetDefaultServerAPIUrl(GetDefault<UAccelByteServerSettings>()->LobbyServerUrl, TEXT("lobby"));
+	FRegistry::ServerSettings.CloudSaveServerUrl = GetDefaultServerAPIUrl(GetDefault<UAccelByteServerSettings>()->CloudSaveServerUrl, TEXT("cloudsave"));
 	FRegistry::ServerCredentials.SetClientCredentials(FRegistry::ServerSettings.ClientId, FRegistry::ServerSettings.ClientSecret);
 
 #endif
