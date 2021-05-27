@@ -6,6 +6,8 @@
 
 #include "Runtime/JsonUtilities/Public/JsonObjectConverter.h"
 
+#include "AccelByteUtilities.generated.h"
+
 class JSONUTILITIES_API FAccelByteUtilities
 {
 public:
@@ -40,4 +42,18 @@ public:
 
 		return false;
 	}
+};
+
+USTRUCT(BlueprintType)
+struct ACCELBYTEUE4SDK_API FAccelByteModelsPubIp
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Web | Models | Ip")
+		FString Ip;
+};
+
+class ACCELBYTEUE4SDK_API FAccelByteNetUtilities
+{
+public:
+	static void GetPublicIP(const THandler<FAccelByteModelsPubIp>& OnSuccess, const FErrorHandler& OnError);
 };
