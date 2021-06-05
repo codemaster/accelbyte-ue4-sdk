@@ -9,13 +9,6 @@ DEFINE_LOG_CATEGORY(AccelByteReportLog);
 
 namespace AccelByte
 {
-	/*static*/ void Report::SetLogVerbosity(ELogVerbosity::Type Verbosity)
-	{
-#ifndef NO_LOGGING
-		AccelByteReportLog.SetVerbosity(Verbosity);
-#endif // NO_LOGGING
-	}
-
 	void Report::GetHttpRequest(const FHttpRequestPtr & Request)
 	{
 		if (!UObjectInitialized()) return;
@@ -72,7 +65,30 @@ namespace AccelByte
 			LogMessage += "\n---\n";
 		}
 
-		UE_LOG(AccelByteReportLog, Log, TEXT("%s"), *LogMessage);
+		if (Response.IsValid())
+		{
+			const int32 ResponseCode = Response->GetResponseCode();
+			if (ResponseCode >= 400)
+			{
+				// Error
+				UE_LOG(AccelByteReportLog, Error, TEXT("%s"), *LogMessage);
+			}
+			else if (ResponseCode >= 300)
+			{
+				// Warning
+				UE_LOG(AccelByteReportLog, Warning, TEXT("%s"), *LogMessage);
+			}
+			else
+			{
+				// Log
+				UE_LOG(AccelByteReportLog, Log, TEXT("%s"), *LogMessage);
+			}
+		}
+		else
+		{
+			// Error
+			UE_LOG(AccelByteReportLog, Error, TEXT("%s"), *LogMessage);
+		}
 	}
 
 	void Report::GetFunctionLog(FString FunctionMacroName) 
